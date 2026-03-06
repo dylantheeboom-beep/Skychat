@@ -1,0 +1,1145 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="SkyChat">
+<meta name="theme-color" content="#ffffff">
+<link rel="manifest" href="manifest.json">
+<title>SkyChat</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #f5f4f0;
+    --surface: #ffffff;
+    --surface2: #f0efe9;
+    --border: #e8e6df;
+    --text: #1a1916;
+    --text2: #6b6860;
+    --text3: #a09e98;
+    --accent: #2563eb;
+    --accent-light: #dbeafe;
+    --accent2: #059669;
+    --accent2-light: #d1fae5;
+    --bubble-me: #2563eb;
+    --bubble-her: #ffffff;
+    --shadow: 0 1px 3px rgba(0,0,0,0.08), 0 4px 16px rgba(0,0,0,0.04);
+    --shadow-lg: 0 8px 32px rgba(0,0,0,0.12);
+    --radius: 18px;
+    --radius-sm: 10px;
+  }
+
+  html, body {
+    height: 100%;
+    font-family: 'DM Sans', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    overflow: hidden;
+  }
+
+  /* APP SHELL */
+  .app {
+    display: flex;
+    flex-direction: column;
+    height: 100dvh;
+    max-width: 430px;
+    margin: 0 auto;
+    background: var(--bg);
+    position: relative;
+  }
+
+  /* HEADER */
+  .header {
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    padding: 12px 16px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    position: relative;
+    z-index: 10;
+    box-shadow: var(--shadow);
+  }
+
+  .header-avatar {
+    width: 42px;
+    height: 42px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #667eea, #764ba2);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 18px;
+    flex-shrink: 0;
+    position: relative;
+  }
+
+  .online-dot {
+    position: absolute;
+    bottom: 1px;
+    right: 1px;
+    width: 10px;
+    height: 10px;
+    background: #22c55e;
+    border-radius: 50%;
+    border: 2px solid white;
+  }
+
+  .header-info { flex: 1; }
+  .header-name { font-size: 15px; font-weight: 600; color: var(--text); }
+  .header-status { font-size: 12px; color: var(--text3); margin-top: 1px; }
+
+  .header-actions { display: flex; gap: 8px; }
+  .header-btn {
+    width: 36px; height: 36px;
+    border-radius: 50%;
+    border: none;
+    background: var(--surface2);
+    cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 16px;
+    transition: all 0.15s;
+    color: var(--text2);
+  }
+  .header-btn:hover { background: var(--border); transform: scale(1.05); }
+
+  /* TABS */
+  .tabs {
+    display: flex;
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    padding: 0 16px;
+  }
+  .tab {
+    flex: 1;
+    padding: 10px 8px;
+    text-align: center;
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--text3);
+    cursor: pointer;
+    border-bottom: 2px solid transparent;
+    transition: all 0.2s;
+    letter-spacing: 0.3px;
+  }
+  .tab.active { color: var(--accent); border-bottom-color: var(--accent); }
+
+  /* PANELS */
+  .panel { display: none; flex: 1; flex-direction: column; overflow: hidden; }
+  .panel.active { display: flex; }
+
+  /* MESSAGES */
+  .messages {
+    flex: 1;
+    overflow-y: auto;
+    padding: 16px 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    scroll-behavior: smooth;
+  }
+  .messages::-webkit-scrollbar { width: 0; }
+
+  .date-divider {
+    text-align: center;
+    font-size: 11px;
+    color: var(--text3);
+    margin: 12px 0 8px;
+    font-weight: 500;
+    letter-spacing: 0.5px;
+  }
+
+  .msg-group { display: flex; flex-direction: column; gap: 2px; margin-bottom: 8px; }
+  .msg-group.me { align-items: flex-end; }
+  .msg-group.her { align-items: flex-start; }
+
+  .msg-row { display: flex; align-items: flex-end; gap: 6px; max-width: 85%; }
+  .msg-group.me .msg-row { flex-direction: row-reverse; }
+
+  .bubble {
+    padding: 10px 14px;
+    border-radius: 18px;
+    font-size: 15px;
+    line-height: 1.45;
+    position: relative;
+    max-width: 100%;
+    word-break: break-word;
+    animation: bubbleIn 0.2s ease-out;
+  }
+
+  @keyframes bubbleIn {
+    from { opacity: 0; transform: scale(0.95) translateY(4px); }
+    to { opacity: 1; transform: scale(1) translateY(0); }
+  }
+
+  .me .bubble {
+    background: var(--bubble-me);
+    color: white;
+    border-bottom-right-radius: 4px;
+  }
+  .her .bubble {
+    background: var(--bubble-her);
+    color: var(--text);
+    border-bottom-left-radius: 4px;
+    box-shadow: var(--shadow);
+  }
+
+  .me .bubble:not(:last-child) { border-bottom-right-radius: 4px; }
+  .her .bubble:not(:last-child) { border-bottom-left-radius: 4px; }
+
+  .translation {
+    font-size: 12px;
+    margin-top: 4px;
+    padding: 0 4px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .me .translation { justify-content: flex-end; }
+  .translation-text { color: var(--text3); font-style: italic; cursor: pointer; }
+  .translation-text:hover { color: var(--text2); }
+  .learn-btn {
+    font-size: 10px;
+    background: var(--accent-light);
+    color: var(--accent);
+    border: none;
+    border-radius: 4px;
+    padding: 1px 6px;
+    cursor: pointer;
+    font-weight: 500;
+    white-space: nowrap;
+  }
+
+  .msg-time {
+    font-size: 10px;
+    color: var(--text3);
+    padding: 0 4px;
+    margin-top: 2px;
+  }
+
+  /* VOICE MESSAGE */
+  .voice-bubble {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    min-width: 180px;
+  }
+  .play-btn {
+    width: 32px; height: 32px;
+    border-radius: 50%;
+    border: none;
+    cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 12px;
+    flex-shrink: 0;
+    transition: transform 0.15s;
+  }
+  .play-btn:hover { transform: scale(1.1); }
+  .me .play-btn { background: rgba(255,255,255,0.25); color: white; }
+  .her .play-btn { background: var(--accent-light); color: var(--accent); }
+
+  .waveform {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    gap: 2px;
+    height: 24px;
+  }
+  .wave-bar {
+    width: 3px;
+    border-radius: 2px;
+    background: currentColor;
+    opacity: 0.5;
+    transition: height 0.1s;
+  }
+  .voice-duration { font-size: 12px; opacity: 0.7; }
+
+  /* TYPING INDICATOR */
+  .typing-indicator {
+    display: none;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 12px;
+  }
+  .typing-indicator.show { display: flex; }
+  .typing-bubble {
+    background: var(--bubble-her);
+    border-radius: 18px;
+    border-bottom-left-radius: 4px;
+    padding: 10px 14px;
+    box-shadow: var(--shadow);
+    display: flex;
+    gap: 4px;
+    align-items: center;
+  }
+  .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--text3); animation: bounce 1.2s infinite; }
+  .dot:nth-child(2) { animation-delay: 0.2s; }
+  .dot:nth-child(3) { animation-delay: 0.4s; }
+  @keyframes bounce { 0%,60%,100% { transform: translateY(0); } 30% { transform: translateY(-5px); } }
+
+  /* INPUT AREA */
+  .input-area {
+    background: var(--surface);
+    border-top: 1px solid var(--border);
+    padding: 10px 12px;
+    display: flex;
+    align-items: flex-end;
+    gap: 8px;
+  }
+
+  .input-wrap {
+    flex: 1;
+    background: var(--surface2);
+    border-radius: 22px;
+    border: 1.5px solid var(--border);
+    display: flex;
+    align-items: flex-end;
+    padding: 8px 12px;
+    gap: 8px;
+    transition: border-color 0.2s;
+  }
+  .input-wrap:focus-within { border-color: var(--accent); }
+
+  .msg-input {
+    flex: 1;
+    border: none;
+    background: transparent;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 15px;
+    color: var(--text);
+    resize: none;
+    outline: none;
+    max-height: 100px;
+    line-height: 1.4;
+  }
+  .msg-input::placeholder { color: var(--text3); }
+
+  .input-btn {
+    width: 30px; height: 30px;
+    border: none;
+    background: transparent;
+    cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 18px;
+    color: var(--text3);
+    border-radius: 50%;
+    transition: all 0.15s;
+    flex-shrink: 0;
+  }
+  .input-btn:hover { color: var(--accent); background: var(--accent-light); }
+
+  .send-btn {
+    width: 42px; height: 42px;
+    border-radius: 50%;
+    border: none;
+    background: var(--accent);
+    color: white;
+    cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 18px;
+    transition: all 0.15s;
+    flex-shrink: 0;
+    box-shadow: 0 2px 8px rgba(37,99,235,0.35);
+  }
+  .send-btn:hover { transform: scale(1.05); background: #1d4ed8; }
+  .send-btn:active { transform: scale(0.95); }
+
+  /* RECORD BTN */
+  .record-btn {
+    width: 42px; height: 42px;
+    border-radius: 50%;
+    border: none;
+    background: var(--surface2);
+    color: var(--text2);
+    cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 20px;
+    transition: all 0.15s;
+    flex-shrink: 0;
+  }
+  .record-btn.recording {
+    background: #fee2e2;
+    color: #ef4444;
+    animation: pulse 1s infinite;
+  }
+  @keyframes pulse { 0%,100% { box-shadow: 0 0 0 0 rgba(239,68,68,0.4); } 50% { box-shadow: 0 0 0 8px rgba(239,68,68,0); } }
+
+  /* LEARN PANEL */
+  .learn-panel {
+    position: fixed;
+    bottom: 0; left: 50%; transform: translateX(-50%);
+    width: 100%;
+    max-width: 430px;
+    background: var(--surface);
+    border-radius: 24px 24px 0 0;
+    box-shadow: var(--shadow-lg);
+    padding: 20px;
+    z-index: 100;
+    transform: translateX(-50%) translateY(100%);
+    transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+  }
+  .learn-panel.show { transform: translateX(-50%) translateY(0); }
+
+  .learn-handle {
+    width: 40px; height: 4px;
+    background: var(--border);
+    border-radius: 2px;
+    margin: 0 auto 20px;
+  }
+  .learn-word { font-size: 28px; font-weight: 600; color: var(--text); margin-bottom: 4px; }
+  .learn-roman { font-size: 16px; color: var(--text3); margin-bottom: 12px; font-family: 'DM Mono', monospace; }
+  .learn-meaning { font-size: 15px; color: var(--text2); line-height: 1.5; margin-bottom: 16px; }
+  .learn-example { background: var(--surface2); border-radius: 12px; padding: 12px; font-size: 13px; color: var(--text2); line-height: 1.6; }
+  .learn-example strong { color: var(--text); }
+
+  .speak-btn {
+    display: flex; align-items: center; gap: 8px;
+    background: var(--accent-light);
+    color: var(--accent);
+    border: none;
+    border-radius: 10px;
+    padding: 10px 16px;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    margin-top: 12px;
+    font-family: 'DM Sans', sans-serif;
+    transition: all 0.15s;
+  }
+  .speak-btn:hover { background: var(--accent); color: white; }
+
+  .overlay {
+    display: none;
+    position: fixed; inset: 0;
+    background: rgba(0,0,0,0.3);
+    z-index: 90;
+    backdrop-filter: blur(2px);
+  }
+  .overlay.show { display: block; }
+
+  /* QUIZ PANEL */
+  .quiz-container {
+    flex: 1;
+    overflow-y: auto;
+    padding: 20px 16px;
+  }
+  .quiz-header { margin-bottom: 24px; }
+  .quiz-header h2 { font-size: 22px; font-weight: 600; }
+  .quiz-header p { color: var(--text3); font-size: 14px; margin-top: 4px; }
+
+  .flashcard {
+    background: var(--surface);
+    border-radius: 20px;
+    padding: 40px 24px;
+    text-align: center;
+    box-shadow: var(--shadow);
+    margin-bottom: 20px;
+    min-height: 180px;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    cursor: pointer;
+    transition: transform 0.2s;
+    border: 1px solid var(--border);
+  }
+  .flashcard:hover { transform: translateY(-2px); }
+  .flashcard-word { font-size: 32px; font-weight: 600; margin-bottom: 8px; }
+  .flashcard-hint { font-size: 13px; color: var(--text3); }
+  .flashcard-answer { font-size: 18px; color: var(--text2); margin-top: 12px; display: none; }
+  .flashcard.revealed .flashcard-answer { display: block; }
+
+  .quiz-actions { display: flex; gap: 10px; }
+  .quiz-btn {
+    flex: 1; padding: 14px;
+    border-radius: 14px; border: none;
+    font-size: 15px; font-weight: 500;
+    cursor: pointer; font-family: 'DM Sans', sans-serif;
+    transition: all 0.15s;
+  }
+  .quiz-btn.wrong { background: #fee2e2; color: #ef4444; }
+  .quiz-btn.right { background: var(--accent2-light); color: var(--accent2); }
+  .quiz-btn:hover { filter: brightness(0.95); transform: translateY(-1px); }
+
+  .word-list { display: flex; flex-direction: column; gap: 8px; margin-top: 20px; }
+  .word-item {
+    background: var(--surface);
+    border-radius: 12px;
+    padding: 14px 16px;
+    display: flex; align-items: center; justify-content: space-between;
+    border: 1px solid var(--border);
+    box-shadow: var(--shadow);
+  }
+  .word-item-th { font-size: 18px; font-weight: 500; }
+  .word-item-en { font-size: 13px; color: var(--text3); margin-top: 2px; }
+  .word-item-roman { font-size: 12px; color: var(--text3); font-family: 'DM Mono', monospace; }
+
+  /* DAILY WORD */
+  .daily-word-card {
+    background: linear-gradient(135deg, #2563eb, #7c3aed);
+    border-radius: 20px;
+    padding: 24px;
+    color: white;
+    margin-bottom: 20px;
+    position: relative;
+    overflow: hidden;
+  }
+  .daily-word-card::before {
+    content: '✨';
+    position: absolute; right: 20px; top: 20px;
+    font-size: 24px; opacity: 0.5;
+  }
+  .daily-label { font-size: 11px; font-weight: 500; letter-spacing: 1px; opacity: 0.7; text-transform: uppercase; margin-bottom: 8px; }
+  .daily-thai { font-size: 36px; font-weight: 600; margin-bottom: 4px; }
+  .daily-roman { font-size: 16px; opacity: 0.8; font-family: 'DM Mono', monospace; margin-bottom: 8px; }
+  .daily-meaning { font-size: 15px; opacity: 0.9; }
+
+  /* SETTINGS PANEL */
+  .settings-container { flex: 1; overflow-y: auto; padding: 20px 16px; }
+  .settings-section { margin-bottom: 24px; }
+  .settings-label { font-size: 11px; font-weight: 600; color: var(--text3); letter-spacing: 1px; text-transform: uppercase; margin-bottom: 10px; padding-left: 4px; }
+  .settings-item {
+    background: var(--surface);
+    border-radius: 14px;
+    padding: 14px 16px;
+    display: flex; align-items: center; justify-content: space-between;
+    border: 1px solid var(--border);
+    margin-bottom: 6px;
+  }
+  .settings-item-label { font-size: 15px; font-weight: 500; }
+  .settings-item-desc { font-size: 12px; color: var(--text3); margin-top: 2px; }
+  .toggle {
+    width: 44px; height: 24px;
+    background: var(--border);
+    border-radius: 12px;
+    position: relative;
+    cursor: pointer;
+    transition: background 0.2s;
+    flex-shrink: 0;
+  }
+  .toggle.on { background: var(--accent); }
+  .toggle::after {
+    content: '';
+    position: absolute;
+    width: 20px; height: 20px;
+    border-radius: 50%;
+    background: white;
+    top: 2px; left: 2px;
+    transition: transform 0.2s;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+  }
+  .toggle.on::after { transform: translateX(20px); }
+
+  /* CONFIG MODAL */
+  .config-modal {
+    display: none;
+    position: fixed; inset: 0;
+    background: rgba(0,0,0,0.5);
+    z-index: 200;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+  }
+  .config-modal.show { display: flex; }
+  .config-box {
+    background: var(--surface);
+    border-radius: 24px;
+    padding: 28px 24px;
+    width: 100%;
+    max-width: 380px;
+    box-shadow: var(--shadow-lg);
+  }
+  .config-title { font-size: 20px; font-weight: 600; margin-bottom: 6px; }
+  .config-desc { font-size: 14px; color: var(--text3); margin-bottom: 20px; line-height: 1.5; }
+  .config-input-wrap { margin-bottom: 14px; }
+  .config-label { font-size: 12px; font-weight: 500; color: var(--text2); margin-bottom: 6px; display: block; }
+  .config-input {
+    width: 100%;
+    background: var(--surface2);
+    border: 1.5px solid var(--border);
+    border-radius: 12px;
+    padding: 12px 14px;
+    font-size: 14px;
+    font-family: 'DM Mono', monospace;
+    color: var(--text);
+    outline: none;
+    transition: border-color 0.2s;
+  }
+  .config-input:focus { border-color: var(--accent); }
+  .config-save {
+    width: 100%;
+    background: var(--accent);
+    color: white;
+    border: none;
+    border-radius: 14px;
+    padding: 14px;
+    font-size: 15px;
+    font-weight: 600;
+    cursor: pointer;
+    font-family: 'DM Sans', sans-serif;
+    transition: all 0.15s;
+    margin-top: 4px;
+  }
+  .config-save:hover { background: #1d4ed8; }
+
+  /* STATUS BAR */
+  .status-bar {
+    background: var(--accent-light);
+    color: var(--accent);
+    font-size: 12px;
+    font-weight: 500;
+    text-align: center;
+    padding: 6px;
+    display: none;
+  }
+  .status-bar.show { display: block; }
+  .status-bar.error { background: #fee2e2; color: #ef4444; }
+
+  /* TOAST */
+  .toast {
+    position: fixed;
+    bottom: 100px; left: 50%; transform: translateX(-50%) translateY(20px);
+    background: var(--text);
+    color: white;
+    padding: 10px 20px;
+    border-radius: 20px;
+    font-size: 13px;
+    font-weight: 500;
+    opacity: 0;
+    transition: all 0.3s;
+    z-index: 300;
+    white-space: nowrap;
+  }
+  .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+  /* EMPTY STATE */
+  .empty-state {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    color: var(--text3);
+    padding: 40px;
+    text-align: center;
+  }
+  .empty-icon { font-size: 48px; margin-bottom: 16px; opacity: 0.5; }
+  .empty-title { font-size: 18px; font-weight: 500; color: var(--text2); margin-bottom: 8px; }
+  .empty-desc { font-size: 14px; line-height: 1.5; }
+
+  /* SCROLLBAR */
+  .quiz-container::-webkit-scrollbar,
+  .settings-container::-webkit-scrollbar { width: 0; }
+</style>
+</head>
+<body>
+
+<div class="app">
+  <!-- STATUS -->
+  <div class="status-bar" id="statusBar">Connecting...</div>
+
+  <!-- HEADER -->
+  <div class="header">
+    <div class="header-avatar">
+      🌸
+      <div class="online-dot" id="onlineDot" style="display:none"></div>
+    </div>
+    <div class="header-info">
+      <div class="header-name">SkyChat ✈️</div>
+      <div class="header-status" id="headerStatus">Configure to start</div>
+    </div>
+    <div class="header-actions">
+      <button class="header-btn" onclick="openSettings()" title="Settings">⚙️</button>
+    </div>
+  </div>
+
+  <!-- TABS -->
+  <div class="tabs">
+    <div class="tab active" onclick="switchTab('chat')">💬 Chat</div>
+    <div class="tab" onclick="switchTab('learn')">📚 Learn</div>
+    <div class="tab" onclick="switchTab('quiz')">🎯 Quiz</div>
+  </div>
+
+  <!-- CHAT PANEL -->
+  <div class="panel active" id="chatPanel">
+    <div class="messages" id="messages">
+      <div class="empty-state" id="emptyState">
+        <div class="empty-icon">✈️</div>
+        <div class="empty-title">Welcome to SkyChat</div>
+        <div class="empty-desc">Tap ⚙️ to enter your Firebase and API details to start chatting with real-time translation.</div>
+      </div>
+    </div>
+    <div class="typing-indicator" id="typingIndicator">
+      <div class="typing-bubble">
+        <div class="dot"></div>
+        <div class="dot"></div>
+        <div class="dot"></div>
+      </div>
+    </div>
+    <div class="input-area">
+      <div class="input-wrap">
+        <textarea class="msg-input" id="msgInput" placeholder="Message in English..." rows="1"
+          onkeydown="handleKey(event)" oninput="autoResize(this)"></textarea>
+        <button class="input-btn" onclick="toggleRecording()" id="recordBtn" title="Voice message">🎤</button>
+      </div>
+      <button class="send-btn" onclick="sendMessage()" id="sendBtn">➤</button>
+    </div>
+  </div>
+
+  <!-- LEARN PANEL -->
+  <div class="panel" id="learnPanel">
+    <div class="quiz-container">
+      <div class="quiz-header">
+        <h2>Learn Thai 🇹🇭</h2>
+        <p>Words from your conversations</p>
+      </div>
+      <div class="daily-word-card" id="dailyWordCard">
+        <div class="daily-label">Word of the Day</div>
+        <div class="daily-thai" id="dailyThai">—</div>
+        <div class="daily-roman" id="dailyRoman">—</div>
+        <div class="daily-meaning" id="dailyMeaning">Send some messages to build your word list</div>
+      </div>
+      <div class="word-list" id="wordList">
+        <div style="text-align:center;color:var(--text3);font-size:14px;padding:20px">
+          Words you tap to learn will appear here
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- QUIZ PANEL -->
+  <div class="panel" id="quizPanel">
+    <div class="quiz-container">
+      <div class="quiz-header">
+        <h2>Flashcards 🎯</h2>
+        <p id="quizCount">0 words to practice</p>
+      </div>
+      <div id="quizContent">
+        <div style="text-align:center;color:var(--text3);font-size:14px;padding:40px">
+          Learn some words first, then come back to quiz yourself!
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- LEARN WORD PANEL -->
+<div class="overlay" id="overlay" onclick="closeLearnPanel()"></div>
+<div class="learn-panel" id="learnWordPanel">
+  <div class="learn-handle"></div>
+  <div class="learn-word" id="learnWord">—</div>
+  <div class="learn-roman" id="learnRoman">—</div>
+  <div class="learn-meaning" id="learnMeaning">—</div>
+  <div class="learn-example" id="learnExample"></div>
+  <button class="speak-btn" onclick="speakWord()">🔊 Hear pronunciation</button>
+</div>
+
+<!-- TOAST -->
+<div class="toast" id="toast"></div>
+
+<!-- CONFIG MODAL -->
+<div class="config-modal" id="configModal">
+  <div class="config-box">
+    <div class="config-title">⚙️ SkyChat Setup</div>
+    <div class="config-desc">Enter your credentials to connect. These are saved on your device only.</div>
+    <div class="config-input-wrap">
+      <label class="config-label">Anthropic API Key</label>
+      <input class="config-input" id="cfgApiKey" type="password" placeholder="sk-ant-api03-...">
+    </div>
+    <div class="config-input-wrap">
+      <label class="config-label">Firebase API Key</label>
+      <input class="config-input" id="cfgFirebaseKey" type="password" placeholder="AIza...">
+    </div>
+    <div class="config-input-wrap">
+      <label class="config-label">Firebase Project ID</label>
+      <input class="config-input" id="cfgProjectId" placeholder="skychat-xxxxx">
+    </div>
+    <div class="config-input-wrap">
+      <label class="config-label">Your name (shown to her)</label>
+      <input class="config-input" id="cfgName" placeholder="Dylan">
+    </div>
+    <button class="config-save" onclick="saveConfig()">Save & Connect</button>
+  </div>
+</div>
+
+<script type="module">
+// ─── CONFIG ───────────────────────────────────────────────────────────────
+let config = {};
+let db = null;
+let unsubscribe = null;
+let isRecording = false;
+let mediaRecorder = null;
+let audioChunks = [];
+let learnedWords = JSON.parse(localStorage.getItem('skychat_words') || '[]');
+let currentQuizIndex = 0;
+
+const ROLE = 'dylan'; // This is Dylan's view
+
+// ─── INIT ─────────────────────────────────────────────────────────────────
+window.addEventListener('load', () => {
+  config = JSON.parse(localStorage.getItem('skychat_config') || '{}');
+  if (config.apiKey && config.firebaseKey && config.projectId) {
+    initFirebase();
+  } else {
+    document.getElementById('configModal').classList.add('show');
+  }
+  renderWordList();
+  renderQuiz();
+  loadDailyWord();
+});
+
+// ─── FIREBASE ─────────────────────────────────────────────────────────────
+async function initFirebase() {
+  try {
+    showStatus('Connecting...', false);
+    const { initializeApp } = await import('https://www.gstatic.com/firebasejs/10.7.0/firebase-app.js');
+    const { getFirestore, collection, addDoc, onSnapshot, query, orderBy, serverTimestamp, doc, setDoc, onSnapshot: onSnap } = await import('https://www.gstatic.com/firebasejs/10.7.0/firebase-firestore.js');
+
+    window._fbApp = initializeApp({
+      apiKey: config.firebaseKey,
+      authDomain: `${config.projectId}.firebaseapp.com`,
+      projectId: config.projectId,
+      storageBucket: `${config.projectId}.appspot.com`,
+    });
+    window._db = getFirestore(window._fbApp);
+    window._fbFns = { collection, addDoc, onSnapshot, query, orderBy, serverTimestamp, doc, setDoc };
+
+    // Listen for messages
+    const q = query(collection(window._db, 'messages'), orderBy('timestamp', 'asc'));
+    unsubscribe = onSnapshot(q, (snapshot) => {
+      snapshot.docChanges().forEach(change => {
+        if (change.type === 'added') {
+          const data = change.doc.data();
+          if (data.timestamp) renderMessage(data);
+        }
+      });
+      document.getElementById('emptyState') && (document.getElementById('emptyState').style.display = 'none');
+    });
+
+    // Listen for typing
+    onSnapshot(doc(window._db, 'typing', 'her'), (d) => {
+      const data = d.data();
+      document.getElementById('typingIndicator').classList.toggle('show', data?.isTyping === true);
+    });
+
+    showStatus('Connected ✓', false);
+    setTimeout(() => document.getElementById('statusBar').classList.remove('show'), 2000);
+    document.getElementById('onlineDot').style.display = 'block';
+    document.getElementById('headerStatus').textContent = 'Online — Thai ↔ English';
+
+  } catch(e) {
+    showStatus('Connection failed — check settings', true);
+    console.error(e);
+  }
+}
+
+// ─── SEND MESSAGE ─────────────────────────────────────────────────────────
+window.sendMessage = async function() {
+  const input = document.getElementById('msgInput');
+  const text = input.value.trim();
+  if (!text || !window._db) return;
+  input.value = '';
+  autoResize(input);
+
+  const { collection, addDoc, serverTimestamp } = window._fbFns;
+
+  // Optimistic UI
+  const tempId = Date.now();
+  renderMessage({ id: tempId, sender: ROLE, text, timestamp: { toDate: () => new Date() }, translating: true });
+
+  try {
+    // Translate EN → TH via Claude
+    const translation = await translateText(text, 'en', 'th');
+    await addDoc(collection(window._db, 'messages'), {
+      sender: ROLE,
+      text,
+      translation,
+      lang: 'en',
+      timestamp: serverTimestamp(),
+      type: 'text'
+    });
+    // Remove temp
+    document.getElementById(`msg-${tempId}`)?.remove();
+  } catch(e) {
+    showToast('Failed to send');
+    document.getElementById(`msg-${tempId}`)?.remove();
+  }
+};
+
+// ─── TRANSLATE ────────────────────────────────────────────────────────────
+async function translateText(text, fromLang, toLang) {
+  const context = getConversationContext();
+  const response = await fetch('/api/translate', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ text, fromLang, toLang, context, apiKey: config.apiKey, mode: 'translate' })
+  });
+  const data = await response.json();
+  if (data.error) throw new Error(data.error);
+  return data.result || '';
+}
+
+// ─── WORD LEARNING ────────────────────────────────────────────────────────
+window.learnWord = async function(word, context) {
+  showStatus('Loading word info...', false);
+  try {
+    const response = await fetch('/api/translate', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ text: word, context, apiKey: config.apiKey, mode: 'learn_thai' })
+    });
+    const data = await response.json();
+    let text = data.result || '{}';
+    text = text.replace(/```json|```/g, '').trim();
+    const info = JSON.parse(text);
+
+    document.getElementById('learnWord').textContent = info.thai || word;
+    document.getElementById('learnRoman').textContent = info.romanization || '';
+    document.getElementById('learnMeaning').textContent = info.meaning || '';
+    document.getElementById('learnExample').innerHTML = `<strong>Example:</strong><br>${info.example_thai || ''}<br><em>${info.example_english || ''}</em>${info.tone_note ? `<br><br>🎵 ${info.tone_note}` : ''}`;
+
+    // Save to learned words
+    if (!learnedWords.find(w => w.thai === (info.thai || word))) {
+      learnedWords.push(info);
+      localStorage.setItem('skychat_words', JSON.stringify(learnedWords));
+      renderWordList();
+      renderQuiz();
+    }
+
+    document.getElementById('overlay').classList.add('show');
+    document.getElementById('learnWordPanel').classList.add('show');
+    showStatus('', false);
+    document.getElementById('statusBar').classList.remove('show');
+  } catch(e) {
+    showToast('Could not load word info');
+  }
+};
+
+window.closeLearnPanel = function() {
+  document.getElementById('overlay').classList.remove('show');
+  document.getElementById('learnWordPanel').classList.remove('show');
+};
+
+window.speakWord = function() {
+  const word = document.getElementById('learnWord').textContent;
+  const utter = new SpeechSynthesisUtterance(word);
+  utter.lang = 'th-TH';
+  utter.rate = 0.8;
+  speechSynthesis.speak(utter);
+};
+
+// ─── VOICE RECORDING ──────────────────────────────────────────────────────
+window.toggleRecording = async function() {
+  if (!isRecording) {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      mediaRecorder = new MediaRecorder(stream);
+      audioChunks = [];
+      mediaRecorder.ondataavailable = e => audioChunks.push(e.data);
+      mediaRecorder.onstop = processAudio;
+      mediaRecorder.start();
+      isRecording = true;
+      document.getElementById('recordBtn').classList.add('recording');
+      document.getElementById('recordBtn').textContent = '⏹';
+      showToast('Recording... tap to stop');
+    } catch(e) {
+      showToast('Microphone access denied');
+    }
+  } else {
+    mediaRecorder.stop();
+    mediaRecorder.stream.getTracks().forEach(t => t.stop());
+    isRecording = false;
+    document.getElementById('recordBtn').classList.remove('recording');
+    document.getElementById('recordBtn').textContent = '🎤';
+  }
+};
+
+async function processAudio() {
+  const blob = new Blob(audioChunks, { type: 'audio/webm' });
+  showToast('Processing voice message...');
+
+  // For demo: transcribe via Web Speech or show placeholder
+  // In production: send to Whisper API for transcription
+  // For now, use Web Speech API result if available
+  showToast('Voice message sent ✓');
+
+  // Create audio URL and render
+  const url = URL.createObjectURL(blob);
+  const duration = Math.round(audioChunks.length * 0.1);
+  const { collection, addDoc, serverTimestamp } = window._fbFns;
+  
+  // For voice: store as text placeholder (full Whisper integration needs backend)
+  showToast('Voice messages require Whisper API — coming soon');
+}
+
+// ─── RENDER MESSAGE ───────────────────────────────────────────────────────
+function renderMessage(msg) {
+  const messages = document.getElementById('messages');
+  const emptyState = document.getElementById('emptyState');
+  if (emptyState) emptyState.style.display = 'none';
+
+  const isMe = msg.sender === ROLE;
+  const group = document.createElement('div');
+  group.className = `msg-group ${isMe ? 'me' : 'her'}`;
+  group.id = `msg-${msg.id || Date.now()}`;
+
+  const time = msg.timestamp?.toDate ? msg.timestamp.toDate() : new Date();
+  const timeStr = time.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+
+  let bubbleContent = '';
+  if (msg.translating) {
+    bubbleContent = `<div class="bubble">${msg.text} <span style="opacity:0.6;font-size:12px">translating...</span></div>`;
+  } else {
+    const mainText = isMe ? msg.text : (msg.translation || msg.text);
+    const subText = isMe ? msg.translation : msg.text;
+
+    bubbleContent = `
+      <div class="msg-row">
+        <div class="bubble">${escHtml(mainText)}</div>
+      </div>
+      ${subText ? `
+        <div class="translation">
+          <span class="translation-text" title="Tap to learn">${escHtml(subText)}</span>
+          <button class="learn-btn" onclick="learnWord('${escHtml(subText)}', '${escHtml(mainText)}')">Learn</button>
+        </div>
+      ` : ''}
+      <div class="msg-time">${timeStr}</div>
+    `;
+  }
+
+  group.innerHTML = bubbleContent;
+  messages.appendChild(group);
+  messages.scrollTop = messages.scrollHeight;
+}
+
+// ─── WORD LIST & QUIZ ─────────────────────────────────────────────────────
+function renderWordList() {
+  const list = document.getElementById('wordList');
+  if (!learnedWords.length) {
+    list.innerHTML = '<div style="text-align:center;color:var(--text3);font-size:14px;padding:20px">Words you tap to learn will appear here</div>';
+    return;
+  }
+  list.innerHTML = learnedWords.map(w => `
+    <div class="word-item">
+      <div>
+        <div class="word-item-th">${w.thai || ''}</div>
+        <div class="word-item-roman">${w.romanization || ''}</div>
+        <div class="word-item-en">${w.meaning || ''}</div>
+      </div>
+      <button class="learn-btn" onclick="speakWordDirect('${w.thai}')">🔊</button>
+    </div>
+  `).join('');
+}
+
+window.speakWordDirect = function(word) {
+  const utter = new SpeechSynthesisUtterance(word);
+  utter.lang = 'th-TH'; utter.rate = 0.8;
+  speechSynthesis.speak(utter);
+};
+
+function renderQuiz() {
+  document.getElementById('quizCount').textContent = `${learnedWords.length} words to practice`;
+  if (!learnedWords.length) return;
+
+  const word = learnedWords[currentQuizIndex % learnedWords.length];
+  const showThai = Math.random() > 0.5;
+
+  document.getElementById('quizContent').innerHTML = `
+    <div class="flashcard" id="flashcard" onclick="revealCard()">
+      <div class="flashcard-word">${showThai ? word.thai : word.meaning}</div>
+      <div class="flashcard-hint">Tap to reveal</div>
+      <div class="flashcard-answer">${showThai ? word.meaning : word.thai}</div>
+    </div>
+    <div class="quiz-actions">
+      <button class="quiz-btn wrong" onclick="nextCard(false)">✗ Didn't know</button>
+      <button class="quiz-btn right" onclick="nextCard(true)">✓ Got it</button>
+    </div>
+    <div style="text-align:center;margin-top:12px;color:var(--text3);font-size:13px">${currentQuizIndex + 1} of ${learnedWords.length}</div>
+  `;
+}
+
+window.revealCard = function() {
+  document.getElementById('flashcard')?.classList.add('revealed');
+};
+window.nextCard = function(correct) {
+  currentQuizIndex = (currentQuizIndex + 1) % learnedWords.length;
+  if (correct) showToast('Great! +1 ✓');
+  renderQuiz();
+};
+
+function loadDailyWord() {
+  if (!learnedWords.length) return;
+  const today = new Date().toDateString();
+  const idx = today.split('').reduce((a, c) => a + c.charCodeAt(0), 0) % learnedWords.length;
+  const w = learnedWords[idx];
+  document.getElementById('dailyThai').textContent = w.thai || '—';
+  document.getElementById('dailyRoman').textContent = w.romanization || '—';
+  document.getElementById('dailyMeaning').textContent = w.meaning || '—';
+}
+
+// ─── UI HELPERS ───────────────────────────────────────────────────────────
+window.switchTab = function(tab) {
+  document.querySelectorAll('.tab').forEach((t, i) => {
+    t.classList.toggle('active', ['chat','learn','quiz'][i] === tab);
+  });
+  document.querySelectorAll('.panel').forEach((p, i) => {
+    p.classList.toggle('active', ['chatPanel','learnPanel','quizPanel'][i] === `${tab}Panel`);
+  });
+  if (tab === 'quiz') renderQuiz();
+};
+
+window.handleKey = function(e) {
+  if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); }
+};
+
+window.autoResize = function(el) {
+  el.style.height = 'auto';
+  el.style.height = Math.min(el.scrollHeight, 100) + 'px';
+};
+
+window.openSettings = function() {
+  document.getElementById('cfgApiKey').value = config.apiKey || '';
+  document.getElementById('cfgFirebaseKey').value = config.firebaseKey || '';
+  document.getElementById('cfgProjectId').value = config.projectId || '';
+  document.getElementById('cfgName').value = config.name || '';
+  document.getElementById('configModal').classList.add('show');
+};
+
+window.saveConfig = function() {
+  config = {
+    apiKey: document.getElementById('cfgApiKey').value.trim(),
+    firebaseKey: document.getElementById('cfgFirebaseKey').value.trim(),
+    projectId: document.getElementById('cfgProjectId').value.trim(),
+    name: document.getElementById('cfgName').value.trim() || 'Dylan',
+  };
+  localStorage.setItem('skychat_config', JSON.stringify(config));
+  document.getElementById('configModal').classList.remove('show');
+  initFirebase();
+};
+
+function showStatus(msg, isError) {
+  const bar = document.getElementById('statusBar');
+  bar.textContent = msg;
+  bar.className = `status-bar show${isError ? ' error' : ''}`;
+}
+
+window.showToast = function(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2500);
+};
+
+function getConversationContext() {
+  const msgs = document.querySelectorAll('.bubble');
+  return Array.from(msgs).slice(-6).map(m => m.textContent).join(' | ');
+}
+
+function escHtml(str) {
+  if (!str) return '';
+  return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+}
+</script>
+</body>
+</html>
