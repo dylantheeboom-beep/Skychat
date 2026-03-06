@@ -1,0 +1,663 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="SkyChat">
+<meta name="theme-color" content="#f5f4f0">
+<title>SkyChat</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#f5f4f0;--surface:#fff;--surface2:#f0efe9;--border:#e8e6df;
+  --text:#1a1916;--text2:#6b6860;--text3:#a09e98;
+  --accent:#2563eb;--accent-light:#dbeafe;
+  --green:#059669;--green-light:#d1fae5;
+  --red:#ef4444;--red-light:#fee2e2;
+  --yellow:#d97706;--yellow-light:#fef3c7;
+  --shadow:0 1px 3px rgba(0,0,0,.08),0 4px 16px rgba(0,0,0,.04);
+  --shadow-lg:0 8px 32px rgba(0,0,0,.12);
+}
+html,body{height:100%;font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);overflow:hidden}
+.app{display:flex;flex-direction:column;height:100dvh;max-width:430px;margin:0 auto;background:var(--bg)}
+.header{background:var(--surface);border-bottom:1px solid var(--border);padding:12px 16px;display:flex;align-items:center;gap:12px;z-index:10;box-shadow:var(--shadow)}
+.avatar{width:42px;height:42px;border-radius:50%;background:linear-gradient(135deg,#667eea,#764ba2);display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0;position:relative}
+.online-dot{position:absolute;bottom:1px;right:1px;width:10px;height:10px;background:#22c55e;border-radius:50%;border:2px solid white;display:none}
+.header-info{flex:1}.header-name{font-size:15px;font-weight:600}.header-sub{font-size:12px;color:var(--text3);margin-top:1px}
+.header-btn{width:36px;height:36px;border-radius:50%;border:none;background:var(--surface2);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:16px;transition:all .15s}
+.header-btn:hover{background:var(--border)}
+.tabs{display:flex;background:var(--surface);border-bottom:1px solid var(--border);padding:0 8px}
+.tab{flex:1;padding:10px 4px;text-align:center;font-size:11px;font-weight:500;color:var(--text3);cursor:pointer;border-bottom:2px solid transparent;transition:all .2s;white-space:nowrap}
+.tab.active{color:var(--accent);border-bottom-color:var(--accent)}
+.panel{display:none;flex:1;flex-direction:column;overflow:hidden}.panel.active{display:flex}
+.messages{flex:1;overflow-y:auto;padding:16px 12px;display:flex;flex-direction:column;gap:4px;scroll-behavior:smooth}
+.messages::-webkit-scrollbar{width:0}
+.msg-group{display:flex;flex-direction:column;gap:2px;margin-bottom:8px}
+.msg-group.me{align-items:flex-end}.msg-group.her{align-items:flex-start}
+.bubble{padding:10px 14px;border-radius:18px;font-size:15px;line-height:1.45;word-break:break-word;animation:pop .2s ease-out;max-width:82%}
+@keyframes pop{from{opacity:0;transform:scale(.95) translateY(4px)}to{opacity:1;transform:scale(1) translateY(0)}}
+.me .bubble{background:var(--accent);color:white;border-bottom-right-radius:4px}
+.her .bubble{background:var(--surface);color:var(--text);border-bottom-left-radius:4px;box-shadow:var(--shadow)}
+.verify-row{display:flex;align-items:center;gap:4px;margin-top:3px;padding:0 2px}
+.me .verify-row{justify-content:flex-end}
+.verify-badge{font-size:11px;font-weight:500;padding:1px 7px;border-radius:10px}
+.verify-badge.high{background:var(--green-light);color:var(--green)}
+.verify-badge.medium{background:var(--yellow-light);color:var(--yellow)}
+.verify-badge.low{background:var(--red-light);color:var(--red)}
+.trans-row{display:flex;align-items:center;gap:6px;margin-top:3px;padding:0 4px;flex-wrap:wrap}
+.me .trans-row{justify-content:flex-end}
+.trans-text{font-size:12px;color:var(--text3);font-style:italic}
+.note-en{font-size:11px;color:var(--yellow);font-style:italic;margin-top:2px;padding:0 4px}
+.learn-btn{font-size:10px;background:var(--accent-light);color:var(--accent);border:none;border-radius:4px;padding:2px 7px;cursor:pointer;font-weight:500;white-space:nowrap;flex-shrink:0}
+.msg-time{font-size:10px;color:var(--text3);padding:0 4px;margin-top:2px}
+.typing-indicator{display:none;align-items:center;gap:8px;padding:8px 12px}
+.typing-indicator.show{display:flex}
+.typing-bubble{background:var(--surface);border-radius:18px;border-bottom-left-radius:4px;padding:10px 14px;box-shadow:var(--shadow);display:flex;gap:4px;align-items:center}
+.dot{width:6px;height:6px;border-radius:50%;background:var(--text3);animation:bounce 1.2s infinite}
+.dot:nth-child(2){animation-delay:.2s}.dot:nth-child(3){animation-delay:.4s}
+@keyframes bounce{0%,60%,100%{transform:translateY(0)}30%{transform:translateY(-5px)}}
+.input-area{background:var(--surface);border-top:1px solid var(--border);padding:10px 12px;display:flex;align-items:flex-end;gap:8px}
+.input-wrap{flex:1;background:var(--surface2);border-radius:22px;border:1.5px solid var(--border);display:flex;align-items:flex-end;padding:8px 12px;gap:8px;transition:border-color .2s}
+.input-wrap:focus-within{border-color:var(--accent)}
+.msg-input{flex:1;border:none;background:transparent;font-family:'DM Sans',sans-serif;font-size:15px;color:var(--text);resize:none;outline:none;max-height:100px;line-height:1.4}
+.msg-input::placeholder{color:var(--text3)}
+.send-btn{width:42px;height:42px;border-radius:50%;border:none;background:var(--accent);color:white;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:18px;transition:all .15s;flex-shrink:0;box-shadow:0 2px 8px rgba(37,99,235,.35)}
+.send-btn:active{transform:scale(.95)}
+.mic-btn{width:42px;height:42px;border-radius:50%;border:none;background:var(--surface2);color:var(--text2);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:20px;transition:all .15s;flex-shrink:0}
+.mic-btn.recording{background:var(--red-light);color:var(--red);animation:pulse 1s infinite}
+@keyframes pulse{0%,100%{box-shadow:0 0 0 0 rgba(239,68,68,.4)}50%{box-shadow:0 0 0 8px rgba(239,68,68,0)}}
+.rec-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:200;align-items:center;justify-content:center;flex-direction:column;gap:20px;backdrop-filter:blur(4px)}
+.rec-overlay.show{display:flex}
+.rec-circle{width:96px;height:96px;border-radius:50%;background:var(--red);display:flex;align-items:center;justify-content:center;font-size:34px;animation:pulse 1s infinite;cursor:pointer}
+.rec-label{color:white;font-size:15px;font-weight:500}
+.rec-time{color:white;font-size:26px;font-weight:600;font-family:'DM Mono',monospace;max-width:300px;text-align:center;padding:0 16px;line-height:1.3}
+.scroll-panel{flex:1;overflow-y:auto;padding:20px 16px}.scroll-panel::-webkit-scrollbar{width:0}
+.panel-title{font-size:21px;font-weight:600;margin-bottom:4px}
+.panel-sub{color:var(--text3);font-size:13px;margin-bottom:16px}
+
+/* ADD WORD */
+.add-word-box{background:var(--surface);border-radius:16px;padding:16px;border:1px solid var(--border);box-shadow:var(--shadow);margin-bottom:16px}
+.add-word-title{font-size:13px;font-weight:600;color:var(--text2);margin-bottom:10px}
+.add-word-row{display:flex;gap:8px;margin-bottom:8px}
+.add-word-input{flex:1;background:var(--surface2);border:1.5px solid var(--border);border-radius:12px;padding:10px 12px;font-size:14px;font-family:'DM Sans',sans-serif;color:var(--text);outline:none;transition:border-color .2s}
+.add-word-input:focus{border-color:var(--accent)}
+.add-word-btn{background:var(--accent);color:white;border:none;border-radius:12px;padding:10px 14px;font-size:13px;font-weight:600;cursor:pointer;white-space:nowrap;font-family:'DM Sans',sans-serif}
+.add-bulk-textarea{width:100%;background:var(--surface2);border:1.5px solid var(--border);border-radius:12px;padding:10px 12px;font-size:13px;font-family:'DM Sans',sans-serif;color:var(--text);outline:none;resize:none;height:72px;transition:border-color .2s}
+.add-bulk-textarea:focus{border-color:var(--accent)}
+.add-bulk-hint{font-size:11px;color:var(--text3);margin-bottom:6px}
+
+/* DAILY CARD */
+.daily-card{background:linear-gradient(135deg,#2563eb,#7c3aed);border-radius:20px;padding:22px;color:white;margin-bottom:16px;cursor:pointer;position:relative;overflow:hidden}
+.daily-card::before{content:'✨';position:absolute;right:18px;top:18px;font-size:22px;opacity:.35}
+.daily-label{font-size:10px;font-weight:600;letter-spacing:1px;opacity:.7;text-transform:uppercase;margin-bottom:6px}
+.daily-thai{font-size:34px;font-weight:700;margin-bottom:3px}
+.daily-roman{font-size:14px;opacity:.8;font-family:'DM Mono',monospace;margin-bottom:5px}
+.daily-meaning{font-size:14px;opacity:.9}
+.daily-btns{display:flex;gap:8px;margin-top:10px}
+.daily-btn{background:rgba(255,255,255,.2);border:none;color:white;border-radius:8px;padding:7px 14px;font-size:12px;cursor:pointer;font-family:'DM Sans',sans-serif}
+
+/* WORD LIST */
+.word-list{display:flex;flex-direction:column;gap:8px}
+.word-item{background:var(--surface);border-radius:12px;padding:13px 14px;display:flex;align-items:center;justify-content:space-between;border:1px solid var(--border);box-shadow:var(--shadow)}
+.word-item-main{font-size:17px;font-weight:500}
+.word-item-roman{font-size:11px;color:var(--text3);font-family:'DM Mono',monospace}
+.word-item-meaning{font-size:13px;color:var(--text3);margin-top:2px}
+.word-item-btns{display:flex;gap:6px;flex-shrink:0}
+.spk{background:var(--accent-light);color:var(--accent);border:none;border-radius:8px;padding:6px 9px;font-size:12px;cursor:pointer;transition:all .15s}
+.spk:hover{background:var(--accent);color:white}
+.spk.slow{background:var(--green-light);color:var(--green)}
+.spk.slow:hover{background:var(--green);color:white}
+
+/* FLASHCARD */
+.flashcard{background:var(--surface);border-radius:20px;padding:28px 22px;text-align:center;box-shadow:var(--shadow);margin-bottom:14px;border:1px solid var(--border);cursor:pointer;transition:transform .2s}
+.flashcard:hover{transform:translateY(-2px)}
+.fc-word{font-size:34px;font-weight:700;margin-bottom:6px}
+.fc-roman{font-size:15px;color:var(--text3);font-family:'DM Mono',monospace;margin-bottom:10px}
+.fc-hint{font-size:12px;color:var(--text3)}
+.fc-meaning{font-size:17px;color:var(--text2);margin-top:14px;display:none;line-height:1.5}
+.fc-example{font-size:13px;color:var(--text3);margin-top:6px;display:none;font-style:italic;line-height:1.5}
+.fc-note{font-size:11px;color:var(--yellow);margin-top:6px;display:none;font-style:italic}
+.flashcard.revealed .fc-meaning,.flashcard.revealed .fc-example,.flashcard.revealed .fc-note{display:block}
+.fc-btns{display:flex;justify-content:center;gap:8px;margin-top:12px}
+.fc-btn{border:none;border-radius:10px;padding:8px 16px;font-size:13px;font-weight:500;cursor:pointer;font-family:'DM Sans',sans-serif;transition:all .15s;display:flex;align-items:center;gap:5px}
+.fc-btn.normal{background:var(--accent-light);color:var(--accent)}
+.fc-btn.slow{background:var(--green-light);color:var(--green)}
+.fc-btn:hover{filter:brightness(.93)}
+.quiz-actions{display:flex;gap:10px;margin-top:6px}
+.quiz-btn{flex:1;padding:13px;border-radius:14px;border:none;font-size:15px;font-weight:500;cursor:pointer;font-family:'DM Sans',sans-serif;transition:all .15s}
+.quiz-btn.wrong{background:var(--red-light);color:var(--red)}
+.quiz-btn.right{background:var(--green-light);color:var(--green)}
+.quiz-progress{text-align:center;margin-top:10px;color:var(--text3);font-size:13px}
+
+/* MODALS */
+.status-bar{background:var(--accent-light);color:var(--accent);font-size:12px;font-weight:500;text-align:center;padding:6px;display:none}
+.status-bar.show{display:block}.status-bar.error{background:var(--red-light);color:var(--red)}
+.toast{position:fixed;bottom:90px;left:50%;transform:translateX(-50%) translateY(20px);background:var(--text);color:white;padding:10px 20px;border-radius:20px;font-size:13px;font-weight:500;opacity:0;transition:all .3s;z-index:300;white-space:nowrap;pointer-events:none;max-width:90vw;text-align:center}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+.empty-state{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;color:var(--text3);padding:40px;text-align:center}
+.empty-icon{font-size:48px;margin-bottom:16px;opacity:.4}
+.empty-title{font-size:18px;font-weight:500;color:var(--text2);margin-bottom:8px}
+.empty-desc{font-size:14px;line-height:1.5}
+.modal{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:200;align-items:center;justify-content:center;padding:20px}
+.modal.show{display:flex}
+.modal-box{background:var(--surface);border-radius:24px;padding:26px 22px;width:100%;max-width:380px;box-shadow:var(--shadow-lg)}
+.modal-title{font-size:19px;font-weight:600;margin-bottom:6px}
+.modal-desc{font-size:13px;color:var(--text3);margin-bottom:18px;line-height:1.5}
+.field{margin-bottom:12px}
+.field label{font-size:12px;font-weight:500;color:var(--text2);margin-bottom:5px;display:block}
+.field input{width:100%;background:var(--surface2);border:1.5px solid var(--border);border-radius:12px;padding:11px 13px;font-size:14px;font-family:'DM Mono',monospace;color:var(--text);outline:none;transition:border-color .2s}
+.field input:focus{border-color:var(--accent)}
+.modal-save{width:100%;background:var(--accent);color:white;border:none;border-radius:14px;padding:13px;font-size:15px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif;margin-top:4px}
+.section-divider{font-size:11px;font-weight:600;color:var(--text3);letter-spacing:.8px;text-transform:uppercase;margin:16px 0 8px;padding-left:2px}
+</style>
+</head>
+<body>
+<div class="app">
+  <div class="status-bar" id="statusBar"></div>
+  <div class="header">
+    <div class="avatar">🌸<div class="online-dot" id="onlineDot"></div></div>
+    <div class="header-info">
+      <div class="header-name">SkyChat ✈️</div>
+      <div class="header-sub" id="headerSub">Configure to start</div>
+    </div>
+    <button class="header-btn" onclick="openConfig()">⚙️</button>
+  </div>
+  <div class="tabs">
+    <div class="tab active" onclick="switchTab('chat')">💬 Chat</div>
+    <div class="tab" onclick="switchTab('learn')">📚 Learn</div>
+    <div class="tab" onclick="switchTab('quiz')">🎯 Quiz</div>
+    <div class="tab" onclick="switchTab('add')">➕ Add</div>
+  </div>
+
+  <!-- CHAT -->
+  <div class="panel active" id="chatPanel">
+    <div class="messages" id="messages">
+      <div class="empty-state" id="emptyState">
+        <div class="empty-icon">✈️</div>
+        <div class="empty-title">Welcome to SkyChat</div>
+        <div class="empty-desc">Tap ⚙️ to enter your credentials and start chatting.</div>
+      </div>
+    </div>
+    <div class="typing-indicator" id="typingIndicator">
+      <div class="typing-bubble"><div class="dot"></div><div class="dot"></div><div class="dot"></div></div>
+    </div>
+    <div class="input-area">
+      <div class="input-wrap">
+        <textarea class="msg-input" id="msgInput" placeholder="Message in English..." rows="1"
+          onkeydown="handleKey(event)" oninput="autoResize(this);updateTyping()"></textarea>
+      </div>
+      <button class="mic-btn" id="micBtn" onclick="toggleRecording()">🎤</button>
+      <button class="send-btn" onclick="sendMessage()">➤</button>
+    </div>
+  </div>
+
+  <!-- LEARN -->
+  <div class="panel" id="learnPanel">
+    <div class="scroll-panel">
+      <div class="panel-title">Learn Thai 🇹🇭</div>
+      <div class="panel-sub">Isaan-aware · tap to hear</div>
+      <div class="daily-card" id="dailyCard" onclick="speakDaily(1)">
+        <div class="daily-label">Word of the Day</div>
+        <div class="daily-thai" id="dailyThai">—</div>
+        <div class="daily-roman" id="dailyRoman">—</div>
+        <div class="daily-meaning" id="dailyMeaning">Send messages to build your word list</div>
+        <div class="daily-btns">
+          <button class="daily-btn" onclick="event.stopPropagation();speakDaily(1)">🔊 Normal</button>
+          <button class="daily-btn" onclick="event.stopPropagation();speakDaily(0.6)">🐢 Slow</button>
+        </div>
+      </div>
+      <div class="section-divider">Saved Words</div>
+      <div class="word-list" id="wordList">
+        <div style="text-align:center;color:var(--text3);font-size:14px;padding:20px">Tap "Learn" on messages or add words in the ➕ tab</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- QUIZ -->
+  <div class="panel" id="quizPanel">
+    <div class="scroll-panel">
+      <div class="panel-title">Flashcards 🎯</div>
+      <div class="panel-sub" id="quizCount">0 words</div>
+      <div id="quizContent">
+        <div style="text-align:center;color:var(--text3);font-size:14px;padding:40px">Add words first, then come back to quiz!</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ADD WORDS -->
+  <div class="panel" id="addPanel">
+    <div class="scroll-panel">
+      <div class="panel-title">Add Words ➕</div>
+      <div class="panel-sub">Build your vocab list</div>
+
+      <div class="add-word-box">
+        <div class="add-word-title">Add a single word or phrase</div>
+        <div class="add-word-row">
+          <input class="add-word-input" id="singleWordInput" placeholder="e.g. mai pen rai, สวัสดี, love..." onkeydown="if(event.key==='Enter')addSingleWord()">
+          <button class="add-word-btn" onclick="addSingleWord()">Add</button>
+        </div>
+        <div style="font-size:11px;color:var(--text3)">Thai or English — Claude will explain it for you</div>
+      </div>
+
+      <div class="add-word-box">
+        <div class="add-word-title">Add a list of words</div>
+        <div class="add-bulk-hint">One word or phrase per line (max 20)</div>
+        <textarea class="add-bulk-textarea" id="bulkWordsInput" placeholder="mai pen rai&#10;สวัสดี&#10;I love you&#10;อร่อย"></textarea>
+        <button class="add-word-btn" style="margin-top:8px;width:100%" onclick="addBulkWords()">Add All</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- RECORDING OVERLAY -->
+<div class="rec-overlay" id="recOverlay" onclick="stopRecording()">
+  <div class="rec-circle">🎤</div>
+  <div class="rec-time" id="recTime">0:00</div>
+  <div class="rec-label">Tap to stop</div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<div class="modal" id="configModal">
+  <div class="modal-box">
+    <div class="modal-title">⚙️ SkyChat Setup</div>
+    <div class="modal-desc">Your credentials are saved on this device only.</div>
+    <div class="field"><label>Anthropic API Key</label><input id="cfgApi" type="password" placeholder="sk-ant-api03-..."></div>
+    <div class="field"><label>Firebase API Key</label><input id="cfgFbKey" type="password" placeholder="AIza..."></div>
+    <div class="field"><label>Firebase Project ID</label><input id="cfgFbId" placeholder="skychat-xxxxx"></div>
+    <div class="field"><label>Your name</label><input id="cfgName" placeholder="Dylan"></div>
+    <button class="modal-save" onclick="saveConfig()">Save & Connect</button>
+  </div>
+</div>
+
+<script type="module">
+const FB_CONFIG = {
+  apiKey: "AIzaSyA1Msk318DI0ts3vWANmOTDEyAt1N7GZ4w",
+  authDomain: "skychat-aad20.firebaseapp.com",
+  projectId: "skychat-aad20",
+  storageBucket: "skychat-aad20.appspot.com",
+  messagingSenderId: "314283798926",
+  appId: "1:314283798926:web:95d9beff0be911576634df"
+};
+const VAPID = 'BH8AApweeS_9tEOnSTNBC1TKX7XZ-GEGlN7HoO7In-hz_BQ06y6bNn354qPhVhGLt7GrUJJh--uNdf9D6br6Bm0';
+const ROLE = 'dylan';
+
+let config = {}, db, fbFns;
+let learnedWords = JSON.parse(localStorage.getItem('sc_words') || '[]');
+let quizIndex = 0, typingTimeout;
+let isRecording = false, recTimer, recSeconds = 0;
+let recognition, voiceTranscript = '';
+const renderedIds = new Set();
+
+window.addEventListener('load', () => {
+  config = JSON.parse(localStorage.getItem('sc_config') || '{}');
+  if (config.apiKey && config.fbKey && config.fbId) initFirebase();
+  else openConfig();
+  renderWordList(); renderQuiz(); loadDailyWord();
+  setupSpeechRecognition();
+});
+
+async function initFirebase() {
+  try {
+    showStatus('Connecting...', false);
+    const { initializeApp } = await import('https://www.gstatic.com/firebasejs/10.7.0/firebase-app.js');
+    const { getFirestore, collection, addDoc, onSnapshot, query, orderBy, serverTimestamp, doc, setDoc } =
+      await import('https://www.gstatic.com/firebasejs/10.7.0/firebase-firestore.js');
+    const { getMessaging, getToken, onMessage } =
+      await import('https://www.gstatic.com/firebasejs/10.7.0/firebase-messaging.js');
+
+    const app = initializeApp(FB_CONFIG);
+    db = getFirestore(app);
+    fbFns = { collection, addDoc, serverTimestamp, doc, setDoc };
+
+    const q = query(collection(db, 'messages'), orderBy('timestamp', 'asc'));
+    onSnapshot(q, snap => {
+      snap.docChanges().forEach(ch => {
+        if (ch.type === 'added') {
+          const d = { ...ch.doc.data(), id: ch.doc.id };
+          if (!renderedIds.has(d.id)) { renderedIds.add(d.id); renderMessage(d); }
+        }
+      });
+      document.getElementById('emptyState').style.display = 'none';
+    });
+
+    onSnapshot(doc(db, 'typing', 'her'), d => {
+      document.getElementById('typingIndicator').classList.toggle('show', d.data()?.isTyping === true);
+    });
+
+    try {
+      if ('serviceWorker' in navigator && 'Notification' in window) {
+        const perm = await Notification.requestPermission();
+        if (perm === 'granted') {
+          const sw = await navigator.serviceWorker.register('/firebase-messaging-sw.js');
+          await navigator.serviceWorker.ready;
+          const msg = getMessaging(app);
+          const token = await getToken(msg, { vapidKey: VAPID, serviceWorkerRegistration: sw });
+          if (token) await setDoc(doc(db, 'tokens', ROLE), { token, role: ROLE, updated: serverTimestamp() });
+          onMessage(msg, p => showToast(`💬 ${p.notification?.body || 'New message'}`));
+        }
+      }
+    } catch(e) { console.log('Notifications:', e.message); }
+
+    showStatus('Connected ✓', false);
+    setTimeout(() => document.getElementById('statusBar').classList.remove('show'), 2000);
+    document.getElementById('onlineDot').style.display = 'block';
+    document.getElementById('headerSub').textContent = 'Online — Thai ↔ English';
+  } catch(e) {
+    showStatus('Connection failed — check settings', true);
+    console.error(e);
+  }
+}
+
+window.sendMessage = async function() {
+  const input = document.getElementById('msgInput');
+  const text = input.value.trim();
+  if (!text || !db) return;
+  input.value = ''; autoResize(input); clearTyping();
+  await doSend(text);
+};
+
+async function doSend(text) {
+  const { collection, addDoc, serverTimestamp } = fbFns;
+  try {
+    showStatus('Translating...', false);
+    const res = await callApi({ text, fromLang: 'en', context: getContext(), apiKey: config.apiKey, mode: 'translate' });
+    await addDoc(collection(db, 'messages'), {
+      sender: ROLE, text, lang: 'en', type: 'text',
+      translation: res.translation || '',
+      romanization: res.romanization || '',
+      confidence: res.confidence || 'high',
+      note_en: res.note_en || '',
+      note_th: res.note_th || '',
+      timestamp: serverTimestamp()
+    });
+    document.getElementById('statusBar').classList.remove('show');
+    // Send push notification to her
+    sendPushNotification('her', config.name || 'Dylan', res.translation || text);
+  } catch(e) {
+    showToast('Failed to send'); document.getElementById('statusBar').classList.remove('show');
+  }
+}
+
+function setupSpeechRecognition() {
+  const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if (!SR) return;
+  recognition = new SR();
+  recognition.lang = 'en-AU'; recognition.continuous = true; recognition.interimResults = true;
+  recognition.onresult = e => {
+    let interim = '';
+    for (let i = e.resultIndex; i < e.results.length; i++) {
+      if (e.results[i].isFinal) voiceTranscript += e.results[i][0].transcript;
+      else interim = e.results[i][0].transcript;
+    }
+    const display = (voiceTranscript + (interim ? ' ' + interim : '')).trim();
+    if (display) document.getElementById('recTime').textContent = display;
+  };
+}
+
+window.toggleRecording = function() {
+  if (isRecording) return;
+  voiceTranscript = ''; recSeconds = 0;
+  document.getElementById('recTime').textContent = '0:00';
+  document.getElementById('recOverlay').classList.add('show');
+  document.getElementById('micBtn').classList.add('recording');
+  isRecording = true;
+  recTimer = setInterval(() => { recSeconds++; if (!voiceTranscript) document.getElementById('recTime').textContent = formatTime(recSeconds); }, 1000);
+  recognition?.start();
+};
+
+window.stopRecording = async function() {
+  if (!isRecording) return;
+  isRecording = false; clearInterval(recTimer); recognition?.stop();
+  document.getElementById('recOverlay').classList.remove('show');
+  document.getElementById('micBtn').classList.remove('recording');
+  if (!voiceTranscript.trim()) { showToast('No speech detected'); return; }
+  showStatus('Processing...', false);
+  try {
+    const cleaned = await callApi({ transcript: voiceTranscript, lang: 'en', apiKey: config.apiKey, mode: 'transcribe' });
+    await doSend(cleaned.transcript || voiceTranscript);
+  } catch { await doSend(voiceTranscript); }
+};
+
+function renderMessage(msg) {
+  const container = document.getElementById('messages');
+  const isMe = msg.sender === ROLE;
+  const group = document.createElement('div');
+  group.className = `msg-group ${isMe ? 'me' : 'her'}`;
+  group.id = `msg-${msg.id}`;
+  const time = msg.timestamp?.toDate?.() ? msg.timestamp.toDate() : new Date();
+  const timeStr = time.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+  const mainText = isMe ? msg.text : (msg.translation || msg.text);
+  const subText = isMe ? (msg.romanization ? `${msg.translation} (${msg.romanization})` : msg.translation) : msg.text;
+  const conf = msg.confidence || 'high';
+  const confIcon = conf === 'high' ? '✓' : conf === 'medium' ? '~' : '⚠';
+  const note = msg.note_en || '';
+  const learnTarget = isMe ? (msg.translation || '') : msg.text;
+  const learnCtx = isMe ? msg.text : (msg.translation || '');
+  const learnMode = isMe ? 'learn_thai' : 'learn_english';
+
+  group.innerHTML = `
+    <div class="bubble">${escHtml(mainText)}</div>
+    <div class="verify-row"><span class="verify-badge ${conf}">${confIcon} ${conf}</span></div>
+    ${subText ? `<div class="trans-row"><span class="trans-text">${escHtml(subText)}</span><button class="learn-btn" onclick="learnWord('${escHtml(learnTarget)}','${escHtml(learnCtx)}','${learnMode}')">Learn</button></div>` : ''}
+    ${note ? `<div class="note-en">💡 ${escHtml(note)}</div>` : ''}
+    <div class="msg-time">${timeStr}</div>`;
+  container.appendChild(group);
+  container.scrollTop = container.scrollHeight;
+}
+
+window.learnWord = async function(word, context, mode) {
+  if (!word) return;
+  showToast('Loading...');
+  try {
+    const res = await callApi({ text: word, context, apiKey: config.apiKey, mode });
+    const info = res.result || {};
+    saveWord({ ...info, mode });
+    const wordToSpeak = info.thai || info.word || word;
+    const lang = mode === 'learn_thai' ? 'th-TH' : 'en-US';
+    // Word first, then example
+    speak(wordToSpeak, lang, 1);
+    const ex = info.example_thai || info.example_english || '';
+    if (ex) setTimeout(() => speak(ex, lang, 1), 1500);
+    showToast(`Added: ${wordToSpeak}`);
+    if (document.getElementById('quizPanel').classList.contains('active')) renderQuiz();
+  } catch { showToast('Could not load word'); }
+};
+
+// ── MANUAL ADD ────────────────────────────────────────────────────────────
+window.addSingleWord = async function() {
+  const input = document.getElementById('singleWordInput');
+  const word = input.value.trim();
+  if (!word) return;
+  input.value = '';
+  showToast('Adding word...');
+  try {
+    const res = await callApi({ text: word, fromLang: 'en', apiKey: config.apiKey, mode: 'add_word' });
+    const info = res.result || {};
+    saveWord({ ...info, mode: res.mode || 'learn_thai' });
+    const wordToSpeak = info.thai || info.word || word;
+    const lang = (res.mode || 'learn_thai') === 'learn_thai' ? 'th-TH' : 'en-US';
+    speak(wordToSpeak, lang, 1);
+    const ex = info.example_thai || info.example_english || '';
+    if (ex) setTimeout(() => speak(ex, lang, 1), 1500);
+    showToast(`✓ Added: ${wordToSpeak}`);
+    switchTab('learn');
+  } catch { showToast('Failed to add word'); }
+};
+
+window.addBulkWords = async function() {
+  const textarea = document.getElementById('bulkWordsInput');
+  const words = textarea.value.split('\n').map(w => w.trim()).filter(Boolean).slice(0, 20);
+  if (!words.length) return;
+  textarea.value = '';
+  showToast(`Adding ${words.length} words...`);
+  showStatus(`Adding ${words.length} words...`, false);
+  try {
+    const res = await callApi({ words, fromLang: 'en', apiKey: config.apiKey, mode: 'add_words_bulk' });
+    const results = res.results || [];
+    results.forEach(info => saveWord(info));
+    showStatus('', false);
+    document.getElementById('statusBar').classList.remove('show');
+    showToast(`✓ Added ${results.length} words`);
+    switchTab('learn');
+  } catch { showToast('Failed to add words'); }
+};
+
+function saveWord(info) {
+  const key = info.thai || info.word || '';
+  if (key && !learnedWords.find(w => (w.thai || w.word) === key)) {
+    learnedWords.push(info);
+    localStorage.setItem('sc_words', JSON.stringify(learnedWords));
+    renderWordList(); loadDailyWord();
+  }
+}
+
+window.speak = function(text, lang, rate = 1) {
+  speechSynthesis.cancel();
+  const u = new SpeechSynthesisUtterance(text);
+  u.lang = lang; u.rate = rate; speechSynthesis.speak(u);
+};
+
+window.speakDaily = function(rate = 1) {
+  const word = document.getElementById('dailyThai').textContent;
+  if (word && word !== '—') speak(word, 'th-TH', rate);
+};
+
+function renderQuiz() {
+  document.getElementById('quizCount').textContent = `${learnedWords.length} words`;
+  if (!learnedWords.length) return;
+  const w = learnedWords[quizIndex % learnedWords.length];
+  const isThai = w.mode === 'learn_thai';
+  const displayWord = isThai ? (w.thai || '') : (w.word || '');
+  const meaning = isThai ? (w.meaning_en || w.meaning || '') : (w.meaning_en || w.thai_meaning || '');
+  const roman = isThai ? (w.romanization || '') : (w.pronunciation_tip || '');
+  const example = isThai ? (w.example_english || '') : (w.example_english || '');
+  const note = isThai ? (w.isaan_note || w.tone_note || '') : (w.australian_note || '');
+  const lang = isThai ? 'th-TH' : 'en-US';
+  const exToSpeak = isThai ? (w.example_thai || '') : (w.example_english || '');
+
+  setTimeout(() => {
+    speak(displayWord, lang, 1);
+    if (exToSpeak) setTimeout(() => speak(exToSpeak, lang, 1), 1500);
+  }, 300);
+
+  document.getElementById('quizContent').innerHTML = `
+    <div class="flashcard" id="flashcard" onclick="revealCard()">
+      <div class="fc-word">${escHtml(displayWord || '—')}</div>
+      ${roman ? `<div class="fc-roman">${escHtml(roman)}</div>` : ''}
+      <div class="fc-hint">Tap to reveal meaning</div>
+      <div class="fc-meaning">${escHtml(meaning || '—')}</div>
+      <div class="fc-example">${escHtml(example || '')}</div>
+      ${note ? `<div class="fc-note">💡 ${escHtml(note)}</div>` : ''}
+      <div class="fc-btns">
+        <button class="fc-btn normal" onclick="event.stopPropagation();speak('${escHtml(displayWord)}','${lang}',1)">🔊 Normal</button>
+        <button class="fc-btn slow" onclick="event.stopPropagation();speak('${escHtml(displayWord)}','${lang}',0.6)">🐢 Slow</button>
+      </div>
+    </div>
+    <div class="quiz-actions">
+      <button class="quiz-btn wrong" onclick="nextCard(false)">✗ Again</button>
+      <button class="quiz-btn right" onclick="nextCard(true)">✓ Got it</button>
+    </div>
+    <div class="quiz-progress">${(quizIndex % learnedWords.length) + 1} of ${learnedWords.length}</div>`;
+}
+
+window.revealCard = function() { document.getElementById('flashcard')?.classList.add('revealed'); };
+window.nextCard = function(ok) { quizIndex++; if (ok) showToast('Nice! ✓'); renderQuiz(); };
+
+function renderWordList() {
+  const list = document.getElementById('wordList');
+  if (!learnedWords.length) {
+    list.innerHTML = '<div style="text-align:center;color:var(--text3);font-size:14px;padding:20px">Tap "Learn" on messages or add words in the ➕ tab</div>';
+    return;
+  }
+  list.innerHTML = learnedWords.map((w, i) => {
+    const isThai = w.mode === 'learn_thai';
+    const main = isThai ? (w.thai || '') : (w.word || '');
+    const roman = isThai ? (w.romanization || '') : (w.pronunciation_tip || '');
+    const meaning = isThai ? (w.meaning_en || w.meaning || '') : (w.meaning_en || w.thai_meaning || '');
+    const lang = isThai ? 'th-TH' : 'en-US';
+    return `<div class="word-item">
+      <div style="flex:1;min-width:0">
+        <div class="word-item-main">${escHtml(main)}</div>
+        ${roman ? `<div class="word-item-roman">${escHtml(roman)}</div>` : ''}
+        <div class="word-item-meaning">${escHtml(meaning)}</div>
+      </div>
+      <div class="word-item-btns">
+        <button class="spk" onclick="speak('${escHtml(main)}','${lang}',1)">🔊</button>
+        <button class="spk slow" onclick="speak('${escHtml(main)}','${lang}',0.6)">🐢</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function loadDailyWord() {
+  if (!learnedWords.length) return;
+  const idx = new Date().toDateString().split('').reduce((a,c) => a+c.charCodeAt(0), 0) % learnedWords.length;
+  const w = learnedWords[idx];
+  const isThai = w.mode === 'learn_thai';
+  document.getElementById('dailyThai').textContent = isThai ? (w.thai||'—') : (w.word||'—');
+  document.getElementById('dailyRoman').textContent = isThai ? (w.romanization||'') : (w.pronunciation_tip||'');
+  document.getElementById('dailyMeaning').textContent = isThai ? (w.meaning_en||w.meaning||'') : (w.meaning_en||w.thai_meaning||'');
+}
+
+window.updateTyping = function() {
+  if (!db||!fbFns) return;
+  fbFns.setDoc(fbFns.doc(db,'typing',ROLE), { isTyping: true });
+  clearTimeout(typingTimeout);
+  typingTimeout = setTimeout(clearTyping, 2000);
+};
+function clearTyping() { if (!db||!fbFns) return; fbFns.setDoc(fbFns.doc(db,'typing',ROLE), { isTyping: false }); }
+
+async function sendPushNotification(targetRole, senderName, messageBody) {
+  try {
+    const { doc, getDoc } = await import('https://www.gstatic.com/firebasejs/10.7.0/firebase-firestore.js');
+    const tokenDoc = await getDoc(doc(db, 'tokens', targetRole));
+    if (!tokenDoc.exists()) return;
+    const token = tokenDoc.data().token;
+    await fetch('/api/notify', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ token, title: `✈️ ${senderName}`, body: messageBody, sender: ROLE })
+    });
+  } catch(e) { console.log('Push notification failed:', e.message); }
+}
+
+async function callApi(body) {
+  const r = await fetch('/api/translate', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(body) });
+  const d = await r.json();
+  if (d.error) throw new Error(d.error);
+  return d;
+}
+
+function getContext() { return Array.from(document.querySelectorAll('.bubble')).slice(-6).map(b=>b.textContent).join(' | '); }
+function formatTime(s) { return `${Math.floor(s/60)}:${String(s%60).padStart(2,'0')}`; }
+function escHtml(s) { if (!s) return ''; return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;'); }
+
+window.switchTab = function(t) {
+  document.querySelectorAll('.tab').forEach((el,i) => el.classList.toggle('active',['chat','learn','quiz','add'][i]===t));
+  document.querySelectorAll('.panel').forEach((el,i) => el.classList.toggle('active',['chatPanel','learnPanel','quizPanel','addPanel'][i]===`${t}Panel`));
+  if (t==='quiz') renderQuiz();
+};
+window.handleKey = function(e) { if (e.key==='Enter'&&!e.shiftKey){e.preventDefault();sendMessage();} };
+window.autoResize = function(el) { el.style.height='auto'; el.style.height=Math.min(el.scrollHeight,100)+'px'; };
+window.openConfig = function() {
+  document.getElementById('cfgApi').value=config.apiKey||'';
+  document.getElementById('cfgFbKey').value=config.fbKey||'';
+  document.getElementById('cfgFbId').value=config.fbId||'';
+  document.getElementById('cfgName').value=config.name||'';
+  document.getElementById('configModal').classList.add('show');
+};
+window.saveConfig = function() {
+  config = { apiKey:document.getElementById('cfgApi').value.trim(), fbKey:document.getElementById('cfgFbKey').value.trim(), fbId:document.getElementById('cfgFbId').value.trim(), name:document.getElementById('cfgName').value.trim()||'Dylan' };
+  localStorage.setItem('sc_config', JSON.stringify(config));
+  document.getElementById('configModal').classList.remove('show');
+  initFirebase();
+};
+function showStatus(msg,isErr) { const b=document.getElementById('statusBar'); b.textContent=msg; b.className=`status-bar show${isErr?' error':''}`; }
+window.showToast = function(msg) { const t=document.getElementById('toast'); t.textContent=msg; t.classList.add('show'); setTimeout(()=>t.classList.remove('show'),2500); };
+</script>
+</body>
+</html>
